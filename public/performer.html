@@ -1,0 +1,511 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>UNSCRIPTED — Performer</title>
+<style>
+  :root{
+    --bg:#050608; --fg:#f5f6fa; --dim:#9aa2b1; --accent:#ffcf40; --danger:#ff5c5c;
+    --card:#12141c; --border:#262a36; --think:#c9a6ff; --green:#7dffb0;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;min-height:100%;}
+  body{ background:var(--bg); color:var(--fg); font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; -webkit-font-smoothing:antialiased; }
+  .wrap{max-width:560px;margin:0 auto;padding:0.9rem 1.1rem 3rem;min-height:100vh;display:flex;flex-direction:column;}
+  .topbar{display:flex;align-items:center;justify-content:space-between;gap:0.8rem;padding:0.6rem 0 1.1rem;position:sticky;top:0;background:var(--bg);z-index:20;}
+  .topbar-left{display:flex;align-items:center;gap:0.8rem;}
+  .topbar-right{display:flex;align-items:center;gap:0.5rem;}
+  .pill{padding:0.5rem 1rem;border-radius:999px;border:1px solid var(--border);font-size:0.9rem;color:var(--dim);white-space:nowrap;}
+  .pill.live{background:#1d3b2a;color:var(--green);border-color:#2c5c3e;font-weight:700;}
+  .pill.setup{color:var(--accent);border-color:#5c4a1a;}
+  .pill.ended{color:var(--dim);}
+  .fable-indicator{display:flex;align-items:center;gap:0.4rem;font-size:0.78rem;color:var(--dim);letter-spacing:0.04em;}
+  .fable-dot{width:8px;height:8px;border-radius:50%;background:#3a3f4d;transition:background .3s,box-shadow .3s;}
+  .fable-dot.on{background:var(--think);box-shadow:0 0 8px var(--think);animation:pulse 1.4s ease-in-out infinite;}
+  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.35;}}
+  .btn{border-radius:14px;border:1px solid var(--border);background:var(--card);color:var(--fg);font-size:1rem;padding:0.9rem 1.2rem;min-height:52px;cursor:pointer;}
+  .btn.primary{background:var(--accent);color:#161200;font-weight:700;border-color:var(--accent);}
+  .btn.primary:disabled{opacity:0.5;cursor:default;}
+  .btn.big{width:100%;font-size:1.15rem;min-height:64px;margin-top:0.9rem;}
+  .btn.ghost{background:transparent;color:var(--dim);border:1px solid var(--border);min-height:auto;padding:0.5rem 0.9rem;font-size:0.85rem;}
+  .btn.secondary{background:transparent;border:1px solid var(--accent);color:var(--accent);margin-top:0.8rem;}
+  .btn.secondary:disabled{opacity:0.5;}
+  textarea, input[type=text]{ width:100%;background:#0c0e14;border:1px solid var(--border);border-radius:12px; color:var(--fg);padding:0.9rem;font-size:1.05rem;font-family:inherit;margin-top:0.6rem; }
+  textarea{min-height:90px;resize:vertical;}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:1.3rem;margin-bottom:1.2rem;}
+  .card-title{font-size:0.85rem;text-transform:uppercase;letter-spacing:0.12em;color:var(--dim);margin-bottom:0.8rem;}
+  .notice{text-align:center;color:var(--dim);font-size:1rem;}
+  .notice .btn{margin-top:1rem;}
+  .instruction-card{padding:1.6rem;}
+  .step-counter{font-size:0.85rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--dim);margin-bottom:0.7rem;}
+  .instruction-text{font-size:clamp(1.6rem,7vw,2.3rem);font-weight:700;line-height:1.3;}
+  .instruction-text .say{color:var(--accent);}
+  .queue-note{color:var(--dim);font-size:0.8rem;margin-top:0.8rem;}
+  .field-label{display:block;font-weight:700;margin-top:0.7rem;}
+  .hold-card{border-color:#3a3520;}
+  .hold-note{color:var(--dim);font-size:0.85rem;margin-top:1rem;font-style:italic;}
+  .error-banner{background:#2a1010;color:#ffb3b3;border:1px solid #5a2222;padding:0.7rem 1rem;border-radius:12px;font-size:0.9rem;margin-bottom:1rem;}
+  .toast{position:fixed;top:0.8rem;left:50%;transform:translateX(-50%);background:#2a1010;color:#ffb3b3;border:1px solid #5a2222;padding:0.6rem 1.1rem;border-radius:10px;font-size:0.85rem;z-index:999;max-width:90vw;}
+  .collapsible{margin-top:0.4rem;}
+  .collapse-toggle{width:100%;text-align:left;background:transparent;border:none;color:var(--dim);font-size:0.9rem;padding:0.7rem 0;cursor:pointer;border-top:1px solid var(--border);}
+  .collapse-body{padding:0.4rem 0 1rem;}
+  .problem-quick{display:flex;flex-wrap:wrap;gap:0.6rem;margin-bottom:0.4rem;}
+  .chip-btn{flex:1 1 40%;border-radius:12px;border:1px solid var(--border);background:#0c0e14;color:var(--fg);padding:0.75rem;font-size:0.9rem;min-height:48px;cursor:pointer;}
+  .history-item{border-bottom:1px solid var(--border);padding:0.6rem 0;font-size:0.9rem;color:var(--dim);}
+  .history-time{font-family:var(--mono);font-size:0.75rem;}
+  .history-text{color:var(--fg);margin-top:0.15rem;}
+  .history-report{margin-top:0.3rem;font-style:italic;font-family:var(--mono);}
+  @keyframes shake{10%,90%{transform:translateX(-1px);}20%,80%{transform:translateX(2px);}30%,50%,70%{transform:translateX(-4px);}40%,60%{transform:translateX(4px);}}
+  .shake{animation:shake 0.4s;border-color:var(--danger) !important;}
+  .golive-hint{color:var(--dim);font-size:0.8rem;margin-top:0.6rem;}
+  .ended-closing{font-size:1.1rem;line-height:1.45;margin-top:0.3rem;}
+  .footer-note{margin-top:auto;padding-top:1.6rem;color:var(--dim);font-size:0.78rem;text-align:center;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="topbar">
+    <div class="topbar-left">
+      <div class="pill" id="statusPill">Idle</div>
+      <div class="fable-indicator"><span class="fable-dot" id="fableDot"></span><span>Fable</span></div>
+    </div>
+    <div class="topbar-right">
+      <button class="btn ghost" id="endShowBtn" hidden>End show</button>
+      <button class="btn ghost" id="resetBtn">Reset</button>
+    </div>
+  </header>
+
+  <div class="error-banner" id="errorBanner" hidden></div>
+
+  <main id="main">
+    <section id="idleSection" hidden>
+      <div class="card">
+        <label class="field-label" for="propsInput">What props do you have?</label>
+        <textarea id="propsInput" placeholder="one full deck of 52 cards, pens, paper, a few envelopes"></textarea>
+        <label class="field-label" for="roomInput">The room</label>
+        <textarea id="roomInput" placeholder="≈30 people, dinner table, no screen, 8 minutes"></textarea>
+        <button class="btn primary big" id="startBtn">Start</button>
+      </div>
+    </section>
+
+    <section id="activeSection" hidden>
+      <div class="card instruction-card hold-card" id="waitingCard" hidden>
+        <div class="card-title">Meanwhile</div>
+        <div class="instruction-text" id="holdText"></div>
+        <div class="hold-note" id="holdNote">Fable is deciding the next step</div>
+        <button class="btn" id="carryOnBtn" hidden>Carry on without Fable</button>
+      </div>
+
+      <div class="card instruction-card" id="stepCard" hidden>
+        <div class="step-counter" id="stepCounter"></div>
+        <div class="instruction-text" id="stepText"></div>
+        <div class="queue-note" id="queueNote" hidden></div>
+
+        <div id="doneBlock" hidden>
+          <button class="btn primary big" id="doneBtn">Done</button>
+        </div>
+        <div id="reportBlock" hidden>
+          <label class="field-label" id="reportLabel" for="reportInput">What happened?</label>
+          <textarea id="reportInput" placeholder="Type what happened…"></textarea>
+          <button class="btn primary big" id="reportSendBtn">Send</button>
+        </div>
+        <div id="goliveBlock" hidden>
+          <button class="btn primary big" id="goliveBtn">Audience is ready — go live</button>
+          <div class="golive-hint" id="goliveHint" hidden>You can go live as soon as this button lights up.</div>
+        </div>
+      </div>
+
+      <div class="card notice" id="noQueueCard" hidden>
+        <div>Fable has nothing queued.</div>
+        <button class="btn secondary" id="nudgeBtn">Nudge Fable</button>
+      </div>
+
+      <div class="card notice" id="prepCard" hidden>
+        <div>Fable is preparing the next step…</div>
+      </div>
+    </section>
+
+    <section id="endedSection" hidden>
+      <div class="card">
+        <div class="card-title">Show over</div>
+        <div class="ended-closing" id="endedClosing" hidden></div>
+        <button class="btn primary big" id="newShowBtn">New show</button>
+      </div>
+    </section>
+
+    <section class="collapsible">
+      <button class="collapse-toggle" id="problemToggle">Something went wrong ▾</button>
+      <div class="collapse-body" id="problemBody" hidden>
+        <div class="problem-quick" id="problemQuick"></div>
+        <textarea id="problemInput" placeholder="Describe what's happening…"></textarea>
+        <button class="btn secondary" id="problemSendBtn">Send</button>
+      </div>
+    </section>
+
+    <section class="collapsible">
+      <button class="collapse-toggle" id="historyToggle">Recent steps ▾</button>
+      <div class="collapse-body" id="historyBody" hidden>
+        <div id="historyList"></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer-note">You are Fable's hands. Do only the step on screen.</footer>
+</div>
+<div class="toast" id="toast" hidden></div>
+<script>
+    // This page is reached at /performer?k=<key>; carry that key on every request.
+    var KEY = new URLSearchParams(location.search).get('k') || '';
+    function withKey(u) { return KEY ? u + (u.indexOf('?') < 0 ? '?' : '&') + 'k=' + encodeURIComponent(KEY) : u; }
+
+  var lastState = null;
+  var currentStepId = null;
+  var stepSending = false;
+  var toastTimer = null;
+
+  var PROBLEM_QUICK = [
+    "They refused",
+    "They miscounted / lost track",
+    "They shuffled differently than asked",
+    "I lost my place",
+    "Skip this effect"
+  ];
+
+  function esc(s){
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+    });
+  }
+
+  function highlightSpeech(text){
+    text = String(text == null ? '' : text);
+    var re = /"([^"]*)"|“([^”]*)”/g;
+    var out = '';
+    var last = 0;
+    var m;
+    while((m = re.exec(text))){
+      out += esc(text.slice(last, m.index));
+      var inner = m[1] != null ? m[1] : m[2];
+      var openCh = m[0].charAt(0);
+      var closeCh = m[0].charAt(m[0].length - 1);
+      out += '<span class="say">' + esc(openCh) + esc(inner) + esc(closeCh) + '</span>';
+      last = re.lastIndex;
+    }
+    out += esc(text.slice(last));
+    return out;
+  }
+
+  function showToast(msg){
+    var t = document.getElementById('toast');
+    t.textContent = msg; t.hidden = false;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ t.hidden = true; }, 4000);
+  }
+
+  async function post(url, body){
+    try{
+      var res = await fetch(withKey(url), { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body || {}) });
+      var data = null;
+      try{ data = await res.json(); }catch(e){ data = null; }
+      return data || {ok:false, error:'Bad response from server'};
+    }catch(err){ return {ok:false, error:'Network error'}; }
+  }
+
+  function connect(){
+    var es = new EventSource(withKey('/performer/events'));
+    es.addEventListener('state', function(e){
+      try{ var s = JSON.parse(e.data); lastState = s; render(s); }
+      catch(err){ showToast('Bad state payload'); }
+    });
+  }
+
+  function render(state){
+    setPill(state);
+    setFableDot(state);
+    renderError(state);
+
+    var idleSection = document.getElementById('idleSection');
+    var activeSection = document.getElementById('activeSection');
+    var endedSection = document.getElementById('endedSection');
+    var isActive = state.phase === 'setup' || state.phase === 'live';
+
+    idleSection.hidden = state.phase !== 'idle';
+    activeSection.hidden = !isActive;
+    endedSection.hidden = state.phase !== 'ended';
+    document.getElementById('endShowBtn').hidden = !isActive;
+
+    if(isActive){ renderActive(state); }
+    else { currentStepId = null; }
+
+    if(state.phase === 'ended'){ renderEnded(state); }
+
+    renderHistory(state);
+  }
+
+  function setPill(state){
+    var pill = document.getElementById('statusPill');
+    pill.className = 'pill';
+    if(state.phase === 'live'){ pill.textContent = 'LIVE'; pill.classList.add('live'); return; }
+    if(state.phase === 'setup'){ pill.textContent = 'Setting up'; pill.classList.add('setup'); return; }
+    if(state.phase === 'ended'){ pill.textContent = 'Ended'; pill.classList.add('ended'); return; }
+    pill.textContent = 'Idle';
+  }
+
+  function setFableDot(state){
+    document.getElementById('fableDot').classList.toggle('on', !!state.thinking);
+  }
+
+  function renderError(state){
+    var el = document.getElementById('errorBanner');
+    if(state.error){ el.hidden = false; el.textContent = state.error; }
+    else { el.hidden = true; }
+  }
+
+  function renderActive(state){
+    var waitingCard = document.getElementById('waitingCard');
+    var stepCard = document.getElementById('stepCard');
+    var noQueueCard = document.getElementById('noQueueCard');
+    var prepCard = document.getElementById('prepCard');
+    waitingCard.hidden = true;
+    stepCard.hidden = true;
+    noQueueCard.hidden = true;
+    prepCard.hidden = true;
+
+    if(state.waiting_for_fable){
+      waitingCard.hidden = false;
+      document.getElementById('holdText').innerHTML = highlightSpeech(state.hold_text || '');
+      var down = !!state.fable_down;
+      document.getElementById('holdNote').textContent = down ? 'Fable could not be reached.' : 'Fable is deciding the next step';
+      document.getElementById('carryOnBtn').hidden = !(down && state.queue_ahead > 0);
+      currentStepId = null;
+      return;
+    }
+
+    if(state.step){
+      stepCard.hidden = false;
+      renderStepCard(state);
+      return;
+    }
+
+    currentStepId = null;
+    if(state.phase === 'live'){ noQueueCard.hidden = false; }
+    else { prepCard.hidden = false; }
+  }
+
+  function renderStepCard(state){
+    var step = state.step;
+    var isNewStep = currentStepId !== step.id;
+
+    document.getElementById('stepCounter').textContent =
+      (step.phase === 'setup' ? 'Setup ' : 'Step ') + step.index + ' of ' + step.total;
+    document.getElementById('stepText').innerHTML = highlightSpeech(step.text || '');
+
+    var queueNote = document.getElementById('queueNote');
+    if(state.queue_ahead){
+      queueNote.hidden = false;
+      queueNote.textContent = state.queue_ahead + (state.queue_ahead === 1 ? ' more step queued' : ' more steps queued');
+    } else {
+      queueNote.hidden = true;
+    }
+
+    var doneBlock = document.getElementById('doneBlock');
+    var reportBlock = document.getElementById('reportBlock');
+    var goliveBlock = document.getElementById('goliveBlock');
+    doneBlock.hidden = step.needs !== 'done';
+    reportBlock.hidden = step.needs !== 'report';
+    goliveBlock.hidden = step.needs !== 'golive';
+
+    updateGoliveButton(state);
+
+    if(isNewStep){
+      currentStepId = step.id;
+      document.getElementById('reportInput').value = '';
+      document.getElementById('reportLabel').textContent = step.hint || 'What happened?';
+      document.getElementById('reportInput').placeholder = step.hint || '';
+      setStepSending(false);
+      if(step.needs === 'report'){
+        setTimeout(function(){
+          var ta = document.getElementById('reportInput');
+          if(ta) ta.focus();
+        }, 0);
+      }
+    }
+  }
+
+  function updateGoliveButton(state){
+    var step = state && state.step;
+    var goliveBtn = document.getElementById('goliveBtn');
+    var goliveHint = document.getElementById('goliveHint');
+    if(!step || step.needs !== 'golive') return;
+    var ready = !!state.queue_ahead && state.queue_ahead > 0;
+    goliveHint.hidden = ready;
+    goliveBtn.textContent = ready ? 'Audience is ready — go live' : 'Fable is still preparing the show…';
+    goliveBtn.disabled = stepSending || !ready;
+  }
+
+  function setStepSending(v){
+    stepSending = v;
+    document.getElementById('doneBtn').disabled = v;
+    document.getElementById('reportSendBtn').disabled = v;
+    if(lastState && lastState.step && lastState.step.needs === 'golive'){
+      updateGoliveButton(lastState);
+    } else {
+      document.getElementById('goliveBtn').disabled = v;
+    }
+  }
+
+  async function sendStepDone(stepId, report){
+    if(stepSending) return;
+    setStepSending(true);
+    var body = {step_id: stepId};
+    if(report) body.report = report;
+    var res = await post('/api/step/done', body);
+    setStepSending(false);
+    if(!res.ok) showToast(res.error || 'Failed to send');
+  }
+
+  function renderEnded(state){
+    var closingEl = document.getElementById('endedClosing');
+    if(state.closing){ closingEl.hidden = false; closingEl.textContent = state.closing; }
+    else { closingEl.hidden = true; }
+  }
+
+  function renderHistory(state){
+    var hist = state.history || [];
+    var list = document.getElementById('historyList');
+    list.innerHTML = '';
+    hist.slice().reverse().forEach(function(h){
+      var div = document.createElement('div');
+      div.className = 'history-item';
+      var html = '<div class="history-time">' + esc(h.time || '') + '</div>';
+      html += '<div class="history-text">' + esc(h.text || '') + '</div>';
+      if(h.report){ html += '<div class="history-report">' + esc(h.report) + '</div>'; }
+      div.innerHTML = html;
+      list.appendChild(div);
+    });
+  }
+
+  function setupCollapse(toggleId, bodyId, label){
+    var toggle = document.getElementById(toggleId);
+    var body = document.getElementById(bodyId);
+    toggle.addEventListener('click', function(){
+      body.hidden = !body.hidden;
+      toggle.textContent = label + (body.hidden ? ' ▾' : ' ▴');
+    });
+  }
+  setupCollapse('problemToggle', 'problemBody', 'Something went wrong');
+  setupCollapse('historyToggle', 'historyBody', 'Recent steps');
+
+  (function(){
+    var wrap = document.getElementById('problemQuick');
+    PROBLEM_QUICK.forEach(function(t){
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'chip-btn';
+      b.textContent = t;
+      b.addEventListener('click', function(){
+        var input = document.getElementById('problemInput');
+        input.value = t;
+        input.focus();
+      });
+      wrap.appendChild(b);
+    });
+  })();
+
+  try{
+    var savedProps = localStorage.getItem('unscripted_props');
+    var savedRoom = localStorage.getItem('unscripted_room');
+    if(savedProps) document.getElementById('propsInput').value = savedProps;
+    if(savedRoom) document.getElementById('roomInput').value = savedRoom;
+  }catch(e){}
+
+  document.getElementById('startBtn').addEventListener('click', async function(){
+    var btn = document.getElementById('startBtn');
+    var props = document.getElementById('propsInput').value.trim();
+    var room = document.getElementById('roomInput').value.trim();
+    try{
+      localStorage.setItem('unscripted_props', props);
+      localStorage.setItem('unscripted_room', room);
+    }catch(e){}
+    btn.disabled = true;
+    var res = await post('/api/show/start', {props: props, room: room});
+    btn.disabled = false;
+    if(!res.ok) showToast(res.error || 'Failed to start');
+  });
+
+  document.getElementById('doneBtn').addEventListener('click', function(){
+    if(!lastState || !lastState.step) return;
+    sendStepDone(lastState.step.id, undefined);
+  });
+
+  document.getElementById('goliveBtn').addEventListener('click', function(){
+    if(!lastState || !lastState.step) return;
+    sendStepDone(lastState.step.id, undefined);
+  });
+
+  function shakeElement(el){
+    el.classList.remove('shake');
+    void el.offsetWidth;
+    el.classList.add('shake');
+    setTimeout(function(){ el.classList.remove('shake'); }, 400);
+  }
+
+  document.getElementById('reportSendBtn').addEventListener('click', function(){
+    if(!lastState || !lastState.step) return;
+    var ta = document.getElementById('reportInput');
+    var val = ta.value.trim();
+    if(!val){ shakeElement(ta); return; }
+    sendStepDone(lastState.step.id, val);
+  });
+
+  document.getElementById('carryOnBtn').addEventListener('click', async function(){
+    var btn = document.getElementById('carryOnBtn');
+    btn.disabled = true;
+    var res = await post('/api/continue', {});
+    btn.disabled = false;
+    if(!res.ok){ toast(res.error || 'could not continue'); }
+  });
+
+  document.getElementById('nudgeBtn').addEventListener('click', async function(){
+    var btn = document.getElementById('nudgeBtn');
+    btn.disabled = true;
+    var res = await post('/api/problem', {text: "Performer: I'm out of instructions, what next?"});
+    btn.disabled = false;
+    if(!res.ok) showToast(res.error || 'Failed to send');
+  });
+
+  document.getElementById('problemSendBtn').addEventListener('click', async function(){
+    var input = document.getElementById('problemInput');
+    var text = input.value.trim();
+    if(!text) return;
+    var btn = document.getElementById('problemSendBtn');
+    btn.disabled = true;
+    var res = await post('/api/problem', {text: text});
+    btn.disabled = false;
+    if(res.ok){ input.value = ''; showToast('Sent to Fable'); }
+    else { showToast(res.error || 'Failed to send'); }
+  });
+
+  async function doReset(){
+    var phase = lastState && lastState.phase;
+    if(phase !== 'ended'){
+      if(!confirm('Reset the show? This will end the current run.')) return;
+    }
+    var res = await post('/api/show/reset', {});
+    if(!res.ok) showToast(res.error || 'Failed to reset');
+  }
+  document.getElementById('resetBtn').addEventListener('click', doReset);
+  document.getElementById('newShowBtn').addEventListener('click', doReset);
+
+  document.getElementById('endShowBtn').addEventListener('click', async function(){
+    if(!confirm('End the show now?')) return;
+    var res = await post('/api/show/end', {});
+    if(!res.ok) showToast(res.error || 'Failed to end show');
+  });
+
+  connect();
+</script>
+</body>
+</html>

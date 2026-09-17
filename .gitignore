@@ -1,0 +1,8 @@
+node_modules/
+runs/
+server.log
+sim/state.json
+__pycache__/
+*.pyc
+.DS_Store
+workspace/t_*.py

@@ -1,0 +1,13 @@
+{
+  "name": "unscripted",
+  "version": "2.0.0",
+  "description": "Live magic performed by an autonomous model through a human who does not know the trick",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "private": true
+}
